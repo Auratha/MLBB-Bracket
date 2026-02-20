@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLBB Swiss Stage Tournament</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Exo+2:wght@300;400;600;800&display=swap');
+
+  :root {
+    --gold: #f5c518;
+    --gold2: #e0a800;
+    --blue: #00c8ff;
+    --dark: #0a0c14;
+    --darker: #060810;
+    --card: #111827;
+    --border: #1e2d45;
+    --win: #22c55e;
+    --lose: #ef4444;
+    --mid: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--darker);
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,200,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,200,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 30px 20px 60px;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: fadeDown 0.6s ease;
+  }
+
+  .badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    color: #000;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 3px;
+    padding: 4px 14px;
+    border-radius: 2px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 700;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #fff 30%, var(--blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+  }
+
+  .subtitle {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    animation: fadeUp 0.6s ease 0.2s both;
+  }
+
+  .stat {
+    text-align: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--blue), var(--gold));
+  }
+
+  .stat-num {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* Rounds layout */
+  .rounds {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .round-block {
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .round-block:nth-child(1) { animation-delay: 0.1s; }
+  .round-block:nth-child(2) { animation-delay: 0.25s; }
+  .round-block:nth-child(3) { animation-delay: 0.4s; }
+
+  .round-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .round-num {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--blue);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .round-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  .round-desc {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* Matches grid */
+  .matches-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+
+  /* Match card */
+  .match-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+    cursor: pointer;
+  }
+
+  .match-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--blue);
+  }
+
+  .match-label {
+    background: rgba(0,200,255,0.06);
+    border-bottom: 1px solid var(--border);
+    padding: 6px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .match-id {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--blue);
+    letter-spacing: 1px;
+  }
+
+  .match-record {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .team-row {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(30,45,69,0.5);
+    transition: background 0.2s;
+    position: relative;
+  }
+
+  .team-row:last-child { border-bottom: none; }
+
+  .team-row:hover { background: rgba(0,200,255,0.04); }
+
+  .seed {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    width: 20px;
+    text-align: center;
+  }
+
+  .team-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .team-name {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    flex: 1;
+  }
+
+  .vs-divider {
+    text-align: center;
+    padding: 4px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 2px;
+    background: rgba(245,197,24,0.04);
+  }
+
+  /* Team colors */
+  .t1 { background: rgba(239,68,68,0.15); color: #f87171; }
+  .t2 { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .t3 { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .t4 { background: rgba(168,85,247,0.15); color: #c084fc; }
+  .t5 { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .t6 { background: rgba(20,184,166,0.15); color: #2dd4bf; }
+  .t7 { background: rgba(236,72,153,0.15); color: #f472b6; }
+  .t8 { background: rgba(99,102,241,0.15); color: #818cf8; }
+
+  /* TBD style */
+  .tbd {
+    font-style: italic;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .tbd-icon { background: rgba(100,116,139,0.15); color: var(--muted); }
+
+  /* Standings section */
+  .standings-section {
+    margin-top: 50px;
+    animation: fadeUp 0.5s ease 0.55s both;
+  }
+
+  .section-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  .standings-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .standings-table th {
+    padding: 10px 16px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    text-align: left;
+    background: rgba(0,200,255,0.04);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .standings-table td {
+    padding: 10px 16px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(30,45,69,0.4);
+  }
+
+  .standings-table tr:last-child td { border-bottom: none; }
+
+  .standings-table tr:hover td { background: rgba(0,200,255,0.03); }
+
+  .rank-badge {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .rank-1 { color: #ffd700; }
+  .rank-2 { color: #c0c0c0; }
+  .rank-3 { color: #cd7f32; }
+
+  .record-pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .record-30 { background: rgba(34,197,94,0.15); color: var(--win); }
+  .record-21 { background: rgba(245,158,11,0.12); color: var(--mid); }
+  .record-12 { background: rgba(239,68,68,0.1); color: #f87171; }
+  .record-03 { background: rgba(100,116,139,0.15); color: var(--muted); }
+
+  .advance-tag {
+    font-size: 10px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    text-transform: uppercase;
+  }
+
+  .advance-yes { background: rgba(34,197,94,0.15); color: var(--win); }
+  .advance-maybe { background: rgba(245,158,11,0.12); color: var(--mid); }
+  .advance-no { background: rgba(239,68,68,0.1); color: #f87171; }
+
+  /* Playoff bracket */
+  .playoff-section {
+    margin-top: 50px;
+    animation: fadeUp 0.5s ease 0.7s both;
+  }
+
+  .bracket-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 30px 20px;
+    overflow-x: auto;
+  }
+
+  .bracket {
+    display: flex;
+    gap: 40px;
+    min-width: 500px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bracket-col {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .bracket-col-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .b-match {
+    background: var(--darker);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    width: 170px;
+  }
+
+  .b-team {
+    padding: 8px 12px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(30,45,69,0.5);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .b-team:last-child { border-bottom: none; }
+
+  .connector {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0;
+    color: var(--border);
+    font-size: 20px;
+  }
+
+  .conn-line {
+    width: 30px;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .conn-v {
+    width: 1px;
+    background: var(--border);
+    flex: 1;
+  }
+
+  /* Tiebreaker */
+  .tiebreaker-section {
+    margin-top: 50px;
+    animation: fadeUp 0.5s ease 0.85s both;
+  }
+
+  .tb-list {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .tb-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(30,45,69,0.4);
+  }
+
+  .tb-item:last-child { border-bottom: none; }
+
+  .tb-num {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gold);
+    width: 24px;
+    text-align: center;
+  }
+
+  .tb-text {
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .tb-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    margin-top: 60px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    animation: fadeUp 0.5s ease 1s both;
+  }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Glow pulse on the top line */
+  @keyframes glowPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  .stat::before { animation: glowPulse 2s ease infinite; }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .matches-grid { grid-template-columns: 1fr 1fr; }
+    .stats-bar { gap: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="badge">⚔ Swiss Stage Format</div>
+    <h1>MLBB TOURNAMENT<br>8 TEAMS</h1>
+    <p class="subtitle">Mobile Legends: Bang Bang · Swiss System · Best of 1</p>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-num">8</div>
+      <div class="stat-label">Teams</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">3</div>
+      <div class="stat-label">Rounds</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">12</div>
+      <div class="stat-label">Matches</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">Top 4</div>
+      <div class="stat-label">Advance</div>
+    </div>
+  </div>
+
+  <!-- Rounds -->
+  <div class="rounds">
+
+    <!-- ROUND 1 -->
+    <div class="round-block">
+      <div class="round-header">
+        <span class="round-num">🎲 Round 1</span>
+        <div class="round-line"></div>
+        <span class="round-desc">Random Seeding · All 0-0</span>
+      </div>
+      <div class="matches-grid">
+
+        <div class="match-card">
+          <div class="match-label">
+            <span class="match-id">MATCH 1</span>
+            <span class="match-record">0-0 vs 0-0</span>
+          </div>
+          <div class="team-row">
+            <span class="seed">#1</span>
+            <div class="team-icon t1">🔥</div>
+            <span class="team-name">Team Falcon</span>
+          </div>
+          <div class="vs-divider">VS</div>
+          <div class="team-row">
+            <span class="seed">#2</span>
+            <div class="team-icon t2">⚡</div>
+            <span class="team-name">Team Lightning</span>
+          </div>
+        </div>
+
+        <div class="match-card">
+          <div class="match-label">
+            <span class="match-id">MATCH 2</span>
+            <span class="match-record">0-0 vs 0-0</span>
+          </div>
+          <div class="team-row">
+            <span class="seed">#3</span>
+            <div class="team-icon t3">🌿</div>
+            <span class="team-name">Team 3</span>
+          </div>
+          <div class="vs-divider">VS</div>
+          <div class="team-row">
+            <span class="seed">#4</span>
+            <div class="team-icon t4">💜</div>
+            <span class="team-name">Team 4</span>
+          </div>
+        </div>
+
+        <div class="match-card">
+          <div class="match-label">
+            <span class="match-id">MATCH 3</span>
+            <span class="match-record">0-0 vs 0-0</span>
+          </div>
+          <div class="team-row">
+            <span class="seed">#5</span>
+            <div class="team-icon t5">🌙</div>
+            <span class="team-name">Team 5</span>
+          </div>
+          <div class="vs-divider">VS</div>
+          <div class="team-row">
+            <span class="seed">#6</span>
+            <div class="team-icon t6">🌊</div>
+            <span class="team-name">Team 6</span>
+          </div>
+        </div>
+
+        <div class="match-card">
+          <div class="match-label">
+            <span class="match-id">MATCH 4</span>
+            <span class="match-record">0-0 vs 0-0</span>
+          </div>
+          <div class="team-row">
+            <span class="seed">#7</span>
+            <div class="team-icon t7">🌸</div>
+            <span class="team-name">Team 7</span>
+          </div>
+          <div class="vs-divider">VS</div>
+          <div class="team-row">
+            <span class="seed">#8</span>
+            <div class="team-icon t8">🔮</div>
+            <span class="team-name">Team 8</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ROUND 2 -->
+    <div class="round-block">
+      <div class="round-header">
+        <span class="round-num">⚔ Round 2</span>
+        <div class="round-line"></div>
+        <span class="round-desc">Winners vs Winners · Losers vs Losers</span>
+      </div>
+      <div class="matches-grid">
+
+        <div class="match-card">
+          <div class="match-label">
+            <span class="match-id">MATCH 5</span>
+            <span class="match-record">1-0 vs 1-0</span>
+          </div>
+          <div class="team-row">
+            <div class="team-icon tbd-icon">🏆</div>
+            <span class="tbd">Winner of M1</span>
+          </div>
+          <div class="vs-divider">VS</div>
+          <div class="team-row">
+            <div class="team-icon tbd-icon">🏆</div>
+            <span class="tbd">Winner of M2</span>
+          </div>
+        </div>
+
+        <div class="match-card">
+          <div class="match-label">
+            <span class="match-id">MATCH 6</span>
+            <span class="match-record">1-0 vs 1-0</span>
+          </div>
+          <div class="team-row">
+            <div class="team-icon tbd-icon">🏆</div>
+            <span class="tbd">Winner of M3</span>
+          </div>
+          <div class="vs-divider">VS</div>
+          <div class="team-row">
+            <div class="team-icon tbd-icon">🏆</div>
+            <span class="tbd">Winner of M4</span>
+          </div>
+        </div>
+
+        <div class="match-card">
+          <div class="match-label">
+            <span class="match-id">MATCH 7</span>
+            <span class="match-record">0-1 vs 0-1</span>
+          </div>
+          <div class="team-row">
+            <div class="team-icon tbd-icon">💀</div>
+            <span class="tbd">Loser of M1</span>
+          </div>
+          <div class="vs-divider">VS</div>
+          <div class="team-row">
+            <div class="team-icon tbd-icon">💀</div>
+            <span class="tbd">Loser of M2</span>
+          </div>
+        </div>
+
+        <div class="match-card">
+          <div class="match-label">
+            <span class="match-id">MATCH 8</span>
+            <span class="match-record">0-1 vs 0-1</span>
+          </div>
+          <div class="team-row">
+            <div class="team-icon tbd-icon">💀</div>
+            <span class="tbd">Loser of M3</span>
+          </div>
+          <div class="vs-divider">VS</div>
+          <div class="team-row">
+            <div class="team-icon tbd-icon">💀</div>
+            <span class="tbd">Loser of M4</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ROUND 3 -->
+    <div class="round-block">
+      <div class="round-header">
+        <span class="round-num">🏅 Round 3</span>
+        <div class="round-line"></div>
+        <span class="round-desc">Final Swiss Round · Decide Rankings</span>
+      </div>
+      <div class="matches-grid">
+
+        <div class="match-card">
+          <div class="match-label">
+            <span class="match-id">MATCH 9</span>
+            <span class="match-record">2-0 vs 2-0</span>
+          </div>
+          <div class="team-row">
+            <div class="team-icon tbd-icon">👑</div>
+            <span class="tbd">Winner of M5</span>
+          </div>
+          <div class="vs-divider">VS</div>
+          <div class="team-row">
+            <div class="team-icon tbd-icon">👑</div>
+            <span class="tbd">Winner of M6</span>
+          </div>
+        </div>
+
+        <div class="match-card">
+          <div class="match-label">
+            <span class="match-id">MATCH 10</span>
+            <span class="match-record">1-1 vs 1-1</span>
+          </div>
+          <div class="team-row">
+            <div class="team-icon tbd-icon">⚔</div>
+            <span class="tbd">Loser of M5</span>
+          </div>
+          <div class="vs-divider">VS</div>
+          <div class="team-row">
+            <div class="team-icon tbd-icon">⚔</div>
+            <span class="tbd">Winner of M7</span>
+          </div>
+        </div>
+
+        <div class="match-card">
+          <div class="match-label">
+            <span class="match-id">MATCH 11</span>
+            <span class="match-record">1-1 vs 1-1</span>
+          </div>
+          <div class="team-row">
+            <div class="team-icon tbd-icon">⚔</div>
+            <span class="tbd">Loser of M6</span>
+          </div>
+          <div class="vs-divider">VS</div>
+          <div class="team-row">
+            <div class="team-icon tbd-icon">⚔</div>
+            <span class="tbd">Winner of M8</span>
+          </div>
+        </div>
+
+        <div class="match-card">
+          <div class="match-label">
+            <span class="match-id">MATCH 12</span>
+            <span class="match-record">0-2 vs 0-2</span>
+          </div>
+          <div class="team-row">
+            <div class="team-icon tbd-icon">💀</div>
+            <span class="tbd">Loser of M7</span>
+          </div>
+          <div class="vs-divider">VS</div>
+          <div class="team-row">
+            <div class="team-icon tbd-icon">💀</div>
+            <span class="tbd">Loser of M8</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Final Standings -->
+  <div class="standings-section">
+    <div class="section-title">📊 Final Standings (After 3 Rounds)</div>
+    <table class="standings-table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Team</th>
+          <th>Record</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="rank-badge rank-1">🥇 1st</span></td>
+          <td style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;">Winner of M9</td>
+          <td><span class="record-pill record-30">3-0</span></td>
+          <td><span class="advance-tag advance-yes">✓ Advances</span></td>
+        </tr>
+        <tr>
+          <td><span class="rank-badge rank-2">🥈 2nd</span></td>
+          <td style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;">Loser of M9</td>
+          <td><span class="record-pill record-21">2-1</span></td>
+          <td><span class="advance-tag advance-yes">✓ Advances</span></td>
+        </tr>
+        <tr>
+          <td><span class="rank-badge rank-3">🥉 3rd</span></td>
+          <td style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;">Winner of M10</td>
+          <td><span class="record-pill record-21">2-1</span></td>
+          <td><span class="advance-tag advance-yes">✓ Advances</span></td>
+        </tr>
+        <tr>
+          <td><span class="rank-badge" style="color:#a78bfa;">4th</span></td>
+          <td style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;">Winner of M11</td>
+          <td><span class="record-pill record-21">2-1</span></td>
+          <td><span class="advance-tag advance-yes">✓ Advances</span></td>
+        </tr>
+        <tr>
+          <td><span class="rank-badge" style="color:var(--muted);">5th</span></td>
+          <td style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;">Loser of M10</td>
+          <td><span class="record-pill record-12">1-2</span></td>
+          <td><span class="advance-tag advance-no">✗ Eliminated</span></td>
+        </tr>
+        <tr>
+          <td><span class="rank-badge" style="color:var(--muted);">6th</span></td>
+          <td style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;">Loser of M11</td>
+          <td><span class="record-pill record-12">1-2</span></td>
+          <td><span class="advance-tag advance-no">✗ Eliminated</span></td>
+        </tr>
+        <tr>
+          <td><span class="rank-badge" style="color:var(--muted);">7th</span></td>
+          <td style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;">Winner of M12</td>
+          <td><span class="record-pill record-12">1-2</span></td>
+          <td><span class="advance-tag advance-no">✗ Eliminated</span></td>
+        </tr>
+        <tr>
+          <td><span class="rank-badge" style="color:var(--muted);">8th</span></td>
+          <td style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;">Loser of M12</td>
+          <td><span class="record-pill record-03">0-3</span></td>
+          <td><span class="advance-tag advance-no">✗ Eliminated</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Playoff Bracket -->
+  <div class="playoff-section">
+    <div class="section-title">🏆 Playoff Bracket (Top 4)</div>
+    <div class="bracket-wrap">
+      <div class="bracket">
+
+        <!-- Semis -->
+        <div class="bracket-col">
+          <div class="bracket-col-title">Semi Finals</div>
+          <div class="b-match">
+            <div class="b-team">🥇 1st Place</div>
+            <div class="b-team">🥈 2nd Place</div>
+          </div>
+          <div class="b-match">
+            <div class="b-team">🥉 3rd Place</div>
+            <div class="b-team">4️⃣ 4th Place</div>
+          </div>
+        </div>
+
+        <!-- Connectors -->
+        <div style="display:flex;flex-direction:column;justify-content:space-around;padding:30px 0;">
+          <div style="width:30px;height:1px;background:var(--border);margin:auto;"></div>
+          <div style="width:1px;height:50px;background:var(--border);margin:auto;"></div>
+          <div style="width:30px;height:1px;background:var(--border);margin:auto;"></div>
+        </div>
+
+        <!-- Final -->
+        <div class="bracket-col" style="justify-content:center;">
+          <div class="bracket-col-title">Grand Final</div>
+          <div class="b-match" style="border-color:var(--gold);box-shadow:0 0 20px rgba(245,197,24,0.1);">
+            <div class="b-team" style="color:var(--gold);">🏆 SF1 Winner</div>
+            <div class="b-team" style="color:var(--gold);">🏆 SF2 Winner</div>
+          </div>
+        </div>
+
+        <!-- 3rd place connector -->
+        <div style="display:flex;flex-direction:column;justify-content:center;opacity:0.4;padding:30px 0;">
+          <div style="width:30px;height:1px;background:var(--muted);"></div>
+        </div>
+
+        <!-- 3rd Place -->
+        <div class="bracket-col" style="justify-content:center;">
+          <div class="bracket-col-title">3rd Place</div>
+          <div class="b-match">
+            <div class="b-team">🥉 SF1 Loser</div>
+            <div class="b-team">🥉 SF2 Loser</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Player Rules -->
+  <div class="tiebreaker-section">
+    <div class="section-title">📋 Player Rules</div>
+    <div class="tb-list">
+
+      <div class="tb-item">
+        <div class="tb-num">1</div>
+        <div>
+          <div class="tb-text">No Swearing or Toxic Behavior</div>
+          <div class="tb-sub">Players are strictly prohibited from using swear words or offensive language at any time during the tournament.</div>
+        </div>
+      </div>
+
+      <div class="tb-item">
+        <div class="tb-num">2</div>
+        <div>
+          <div class="tb-text">Respect All Teams</div>
+          <div class="tb-sub">Treat every opponent, teammate, and staff with respect. Trash talk, harassment, or unsportsmanlike conduct will not be tolerated.</div>
+        </div>
+      </div>
+
+      <div class="tb-item">
+        <div class="tb-num">3</div>
+        <div>
+          <div class="tb-text">Punctuality — Be On Time</div>
+          <div class="tb-sub">All players must arrive before their scheduled match. If a team is late without notice, the opposing team is awarded an automatic win.</div>
+        </div>
+      </div>
+
+      <div class="tb-item">
+        <div class="tb-num">4</div>
+        <div>
+          <div class="tb-text">Pause Allowed for Technical Issues</div>
+          <div class="tb-sub">Players may request a pause if a game error or internet connection issue occurs. Pause requests must be made to the admin immediately.</div>
+        </div>
+      </div>
+
+      <div class="tb-item" style="border-left: 3px solid var(--win); margin-left: 0;">
+        <div class="tb-num" style="color:var(--win);">✓</div>
+        <div>
+          <div class="tb-text" style="color:var(--win);">Pause Allowed</div>
+          <div class="tb-sub">Pause is <strong style="color:var(--win);">permitted</strong> when no battle is occurring — during the preparation phase, before a teamfight starts, or while roaming safely.</div>
+        </div>
+      </div>
+
+      <div class="tb-item" style="border-left: 3px solid var(--lose); margin-left: 0;">
+        <div class="tb-num" style="color:var(--lose);">✗</div>
+        <div>
+          <div class="tb-text" style="color:var(--lose);">Pause NOT Allowed</div>
+          <div class="tb-sub">Pause is <strong style="color:var(--lose);">strictly prohibited</strong> during active battle (teamfight, skirmish, or objective fight in progress). The game must continue until the battle ends.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    MLBB Swiss Tournament Bracket · 8 Teams · 3 Rounds · 12 Total Matches
+  </footer>
+
+</div>
+</body>
+</html>
